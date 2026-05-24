@@ -1,5 +1,6 @@
 import express from "express";
 import path from "path";
+import fs from "fs";
 import { createServer as createViteServer } from "vite";
 import { dbConnection, Node, Instance, PortForward, ApiKey, User, SystemLog } from "./src/db";
 
@@ -625,6 +626,176 @@ async function startServer() {
       res.json({ success: true });
     } else {
       res.status(404).json({ error: "Backup file not found." });
+    }
+  });
+
+  // --- LOCAL FILE MANAGEMENT API ENDPOINTS ---
+  app.get("/api/files/list", (req, res) => {
+    try {
+      const relativeDir = (req.query.dir as string) || ".";
+      const targetDir = path.resolve(process.cwd(), relativeDir);
+      
+      // Safety check: ensure path does not escape project root
+      if (!targetDir.startsWith(process.cwd())) {
+        res.status(403).json({ error: "Access denied. Action escapes workspace root." });
+        return;
+      }
+
+      if (!fs.existsSync(targetDir)) {
+        res.status(404).json({ error: "Target directory does not exist." });
+        return;
+      }
+
+      const files = fs.readdirSync(targetDir, { withFileTypes: true });
+      const list = files
+        .filter(f => !f.name.startsWith('.') && f.name !== 'node_modules' && f.name !== 'dist' && f.name !== '.git')
+        .map(file => {
+          const filePath = path.join(targetDir, file.name);
+          const relativePath = path.relative(process.cwd(), filePath);
+          let stat;
+          try {
+            stat = fs.statSync(filePath);
+          } catch {
+            stat = { size: 0, mtime: new Date() };
+          }
+          return {
+            name: file.name,
+            path: relativePath || ".",
+            isDirectory: file.isDirectory(),
+            size: stat.size,
+            mtime: stat.mtime
+          };
+        });
+
+      res.json({ success: true, files: list, currentPath: path.relative(process.cwd(), targetDir) || "." });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.get("/api/files/read", (req, res) => {
+    try {
+      const relativeFile = req.query.file as string;
+      if (!relativeFile) {
+        res.status(400).json({ error: "File parameter required." });
+        return;
+      }
+      const targetFile = path.resolve(process.cwd(), relativeFile);
+      
+      // Safety check: ensure path does not escape project root
+      if (!targetFile.startsWith(process.cwd())) {
+        res.status(403).json({ error: "Access denied. Action escapes workspace root." });
+        return;
+      }
+
+      if (fs.existsSync(targetFile) && fs.statSync(targetFile).isDirectory()) {
+        res.status(400).json({ error: "Cannot read directory as file." });
+        return;
+      }
+
+      if (!fs.existsSync(targetFile)) {
+        res.status(404).json({ error: "File not found." });
+        return;
+      }
+
+      const content = fs.readFileSync(targetFile, "utf-8");
+      res.json({ success: true, content });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/files/write", (req, res) => {
+    try {
+      const { file, content } = req.body;
+      if (!file) {
+        res.status(400).json({ error: "File parameter required." });
+        return;
+      }
+      const targetFile = path.resolve(process.cwd(), file);
+      
+      // Safety check: ensure path does not escape project root
+      if (!targetFile.startsWith(process.cwd())) {
+        res.status(403).json({ error: "Access denied. Action escapes workspace root." });
+        return;
+      }
+
+      fs.writeFileSync(targetFile, content || "", "utf-8");
+      
+      dbConnection.addLog("HVM Panel", `File written in workspace: ${path.relative(process.cwd(), targetFile)}`, "info");
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/files/create", (req, res) => {
+    try {
+      const { targetPath, type } = req.body;
+      if (!targetPath) {
+        res.status(400).json({ error: "Path is required." });
+        return;
+      }
+      const destination = path.resolve(process.cwd(), targetPath);
+      
+      // Safety check: ensure path does not escape project root
+      if (!destination.startsWith(process.cwd())) {
+        res.status(403).json({ error: "Access denied. Action escapes workspace root." });
+        return;
+      }
+
+      if (fs.existsSync(destination)) {
+        res.status(400).json({ error: "File or directory already exists." });
+        return;
+      }
+
+      if (type === "dir") {
+        fs.mkdirSync(destination, { recursive: true });
+        dbConnection.addLog("HVM Panel", `Created local directory: ${path.relative(process.cwd(), destination)}`, "info");
+      } else {
+        fs.mkdirSync(path.dirname(destination), { recursive: true });
+        fs.writeFileSync(destination, "", "utf-8");
+        dbConnection.addLog("HVM Panel", `Created local file: ${path.relative(process.cwd(), destination)}`, "info");
+      }
+
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.delete("/api/files/delete", (req, res) => {
+    try {
+      const { targetPath } = req.body;
+      if (!targetPath) {
+        res.status(400).json({ error: "Path parameters are required." });
+        return;
+      }
+      const target = path.resolve(process.cwd(), targetPath);
+      
+      // Safety check: ensure path does not escape project root
+      if (!target.startsWith(process.cwd())) {
+        res.status(403).json({ error: "Access denied. Action escapes workspace root." });
+        return;
+      }
+
+      if (!fs.existsSync(target)) {
+        res.status(404).json({ error: "Path not found." });
+        return;
+      }
+
+      const isDir = fs.statSync(target).isDirectory();
+      if (isDir) {
+        fs.rmSync(target, { recursive: true, force: true });
+        dbConnection.addLog("HVM Panel", `Deleted directory: ${path.relative(process.cwd(), target)}`, "warning");
+      } else {
+        fs.unlinkSync(target);
+        dbConnection.addLog("HVM Panel", `Deleted file: ${path.relative(process.cwd(), target)}`, "warning");
+      }
+
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
     }
   });
 

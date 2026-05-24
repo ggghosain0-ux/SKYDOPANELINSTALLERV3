@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Menu, X, Laptop, LayoutDashboard, Key, Server, Settings as SettingsIcon, 
   ShieldAlert, Users, Radio, HelpCircle, LogOut, Bell, ShieldCheck, Database,
-  Info, Terminal, User, ChevronRight, Search
+  Info, Terminal, User, ChevronRight, Search, Folder
 } from 'lucide-react';
 import { User as UserType, Node, Instance, PortForward, ApiKey, SystemSettings } from './types';
 import LandingPage from './components/LandingPage';
@@ -23,6 +23,7 @@ import BackupsCabinetView from './components/BackupsCabinetView';
 import OSIconsView from './components/OSIconsView';
 import NotificationsView from './components/NotificationsView';
 import ProfileView from './components/ProfileView';
+import FileExplorer from './components/FileExplorer';
 
 export default function App() {
   const [user, setUser] = useState<UserType | null>(null);
@@ -368,6 +369,17 @@ export default function App() {
                   >
                     <Database className="w-4 h-4" /> Snapshots Backups
                   </button>
+
+                  <button
+                    onClick={() => { setActiveTab('files'); if (window.innerWidth < 768) setSidebarOpen(false); }}
+                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-semibold tracking-wide transition-all cursor-pointer ${
+                      activeTab === 'files' 
+                        ? 'bg-blue-600/10 text-blue-400 border border-blue-500/20 shadow-md shadow-blue-500/5' 
+                        : 'text-slate-400 hover:text-slate-200 border border-transparent'
+                    }`}
+                  >
+                    <Folder className="w-4 h-4" /> Local File Manager
+                  </button>
                 </div>
               </div>
             )}
@@ -548,6 +560,10 @@ export default function App() {
 
           {activeTab === 'backups' && user.isAdmin && (
             <BackupsCabinetView onRefreshPanel={refreshPanelData} />
+          )}
+
+          {activeTab === 'files' && user.isAdmin && (
+            <FileExplorer />
           )}
         </main>
       </div>
