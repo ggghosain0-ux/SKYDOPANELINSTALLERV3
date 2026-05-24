@@ -1,0 +1,6 @@
+{
+  "name": "SkydoCloud VPS Panel",
+  "description": "Custom decoupled high-performance VPS and instance management control panel with modern visual metrics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

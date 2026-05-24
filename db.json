@@ -1,0 +1,79 @@
+{
+  "users": [
+    {
+      "id": "u-admin",
+      "username": "admin",
+      "email": "admin@localhost",
+      "passwordHash": "admin123",
+      "isAdmin": true,
+      "createdAt": "2026-05-24T08:15:43.823Z"
+    },
+    {
+      "id": "u-1779612793037",
+      "username": "ziyan",
+      "email": "ggghosain0@gmail.com",
+      "passwordHash": "ziyan",
+      "isAdmin": false,
+      "createdAt": "2026-05-24T08:53:13.037Z"
+    }
+  ],
+  "nodes": [],
+  "instances": [],
+  "portForwarding": [],
+  "apiKeys": [],
+  "logs": [
+    {
+      "id": "log-1779612872156-44",
+      "timestamp": "2026-05-24T08:54:32.156Z",
+      "scope": "Security",
+      "message": "User ziyan logged in successfully",
+      "level": "info"
+    },
+    {
+      "id": "log-1779612793037-300",
+      "timestamp": "2026-05-24T08:53:13.037Z",
+      "scope": "Security",
+      "message": "New user created: ziyan (Admin: false)",
+      "level": "info"
+    },
+    {
+      "id": "log-1779612752317-257",
+      "timestamp": "2026-05-24T08:52:32.317Z",
+      "scope": "Security",
+      "message": "User admin logged in successfully",
+      "level": "info"
+    },
+    {
+      "id": "log-1779610872458-710",
+      "timestamp": "2026-05-24T08:21:12.458Z",
+      "scope": "Security",
+      "message": "User admin logged in successfully",
+      "level": "info"
+    },
+    {
+      "id": "l-init",
+      "timestamp": "2026-05-24T08:15:43.823Z",
+      "scope": "HVM Panel",
+      "message": "SkydoCloud Panel Database initialized successfully.",
+      "level": "info"
+    }
+  ],
+  "settings": {
+    "siteName": "SkydoCloud",
+    "siteDescription": "High-Performance VPS Management Panel",
+    "logoUrl": "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=100&h=100&fit=crop",
+    "cpuThreshold": 90,
+    "ramThreshold": 90,
+    "discordEnabled": false,
+    "discordClientId": "admin",
+    "discordClientSecret": "•••••",
+    "discordRedirectUri": "http://localhost:5000/auth/discord/callback",
+    "allowAutoRegistration": true,
+    "buttonText": "Continue with Discord",
+    "backgroundImageUrl": "https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=1920&fit=crop",
+    "footerText": "Powered by SkydoCloud",
+    "timezone": "UTC",
+    "faviconUrl": "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=32&h=32&fit=crop",
+    "userRegistration": true
+  }
+}
